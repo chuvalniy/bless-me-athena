@@ -28,6 +28,7 @@ def _get_llm():
 
 
 def _get_prompt(tools):
+    # optimize due to very high cost
     agent_prompt = hub.pull("hwchase17/react-chat")
 
     prompt = agent_prompt.partial(
@@ -58,8 +59,8 @@ def get_agent():
     agent_executor = AgentExecutor(
         agent=agent,
         tools=tools,
-        memory=ConversationBufferMemory(memory_key="chat_history"),
-        handle_parsing_errors=True
+        memory=ConversationBufferMemory(memory_key="chat_history", max_token_limit=1000),  # optimize
+        handle_parsing_errors=True,
     )
 
     return agent_executor
