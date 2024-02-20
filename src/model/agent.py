@@ -40,7 +40,9 @@ def _get_prompt(tools):
 
 
 def get_agent():
-    tools = [DuckDuckGoSearchRun()]
+    tools = [
+        DuckDuckGoSearchRun()
+    ]
 
     llm = _get_llm()
     prompt = _get_prompt(tools)
@@ -59,7 +61,7 @@ def get_agent():
     agent_executor = AgentExecutor(
         agent=agent,
         tools=tools,
-        memory=ConversationBufferMemory(memory_key="chat_history", max_token_limit=1000),  # optimize
+        memory=ConversationBufferMemory(memory_key="chat_history", max_token_limit=5000),  # optimize
         handle_parsing_errors=True,
     )
 

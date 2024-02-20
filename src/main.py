@@ -1,6 +1,7 @@
 import streamlit as st
 
-from src.ui_components import chat, sidebar
+from ui_components import chat
+from ui_components import sidebar
 
 
 def set_page():

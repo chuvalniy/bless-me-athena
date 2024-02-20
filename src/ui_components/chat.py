@@ -1,6 +1,6 @@
 import streamlit as st
 
-from src.model import get_agent
+from model import get_agent
 
 
 def init_session():

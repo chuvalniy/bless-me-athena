@@ -1,2 +1,2 @@
-from chat import *
-from sidebar import *
+from .chat import *
+from .sidebar import *
