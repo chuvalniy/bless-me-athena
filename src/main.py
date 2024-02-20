@@ -41,12 +41,13 @@ def handle_user_input():
 def handle_assistant_output(prompt):
     if st.session_state.messages[-1]["role"] != "assistant":
         with st.chat_message('assistant'):
-            response = st.session_state.conversation.invoke({"input": prompt})['output']
-            st.markdown(response)
+            with st.spinner("Thinking..."):
+                response = st.session_state.conversation.invoke({"input": prompt})['output']
+                st.markdown(response)
 
-            st.session_state.messages.append(
-                {"role": "assistant", "content": response}
-            )
+                st.session_state.messages.append(
+                    {"role": "assistant", "content": response}
+                )
 
 
 def chat():
