@@ -9,7 +9,7 @@ from langchain.memory import ConversationBufferMemory
 from langchain.tools.render import render_text_description
 from langchain_community.tools.ddg_search import DuckDuckGoSearchRun
 from langchain_community.tools.arxiv.tool import ArxivQueryRun
-from langchain_openai import ChatOpenAI
+from model.llm import G4F
 
 load_dotenv()
 
@@ -22,11 +22,7 @@ os.environ['LANGCHAIN_PROJECT'] = os.getenv('LANGCHAIN_PROJECT')
 
 
 def _get_llm():
-    llm = ChatOpenAI(
-        openai_api_key=OPENAI_API_KEY,
-        base_url=OPENAI_BASE_URL,
-        model_name='mistralai/mixtral-8x7b-instruct',
-    )
+    llm = G4F()
     llm_with_stop = llm.bind(stop=["\nObservation"])
 
     return llm_with_stop

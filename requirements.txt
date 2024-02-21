@@ -5,3 +5,4 @@ langchain_openai~=0.0.6
 duckduckgo_search~=4.4.3
 langchainhub~=0.1.14
 arxiv~=2.1.0
+g4f~=0.2.1.6
