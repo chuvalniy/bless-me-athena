@@ -7,8 +7,9 @@ from langchain.agents.format_scratchpad import format_log_to_str
 from langchain.agents.output_parsers import ReActSingleInputOutputParser
 from langchain.memory import ConversationBufferMemory
 from langchain.tools.render import render_text_description
-from langchain_community.tools.ddg_search import DuckDuckGoSearchRun
 from langchain_community.tools.arxiv.tool import ArxivQueryRun
+from langchain_community.tools.ddg_search import DuckDuckGoSearchRun
+
 from model.llm import G4F
 
 load_dotenv()
@@ -40,11 +41,20 @@ def _get_prompt(tools):
     return prompt
 
 
-def get_agent():
-    tools = [
-        DuckDuckGoSearchRun(),
-        ArxivQueryRun()
-    ]
+def get_agent(options):
+    # refactor
+    mappings = {
+        "DuckDuckGo": DuckDuckGoSearchRun(),
+        "arXiv": ArxivQueryRun(),
+    }
+
+    # refactor
+    tools = []
+    for option in options:
+        if option not in mappings:
+            continue
+
+        tools.append(mappings[option])
 
     llm = _get_llm()
     prompt = _get_prompt(tools)

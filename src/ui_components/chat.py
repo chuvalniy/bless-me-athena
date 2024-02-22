@@ -10,7 +10,7 @@ def init_session():
         ]
 
     if "conversation" not in st.session_state:
-        st.session_state.conversation = get_agent()
+        st.session_state.conversation = get_agent(st.session_state.options)
 
 
 def display_messages():
