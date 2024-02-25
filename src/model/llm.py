@@ -1,14 +1,29 @@
-from typing import Optional, Any, List
+from functools import partial
+from typing import Any, List, Mapping, Optional, Union
 
-import g4f
+from g4f import ChatCompletion
+from g4f.Provider.base_provider import BaseProvider
+from g4f.models import Model
+from langchain.callbacks.manager import CallbackManagerForLLMRun, AsyncCallbackManagerForLLMRun
 from langchain.llms.base import LLM
-from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain.llms.utils import enforce_stop_tokens
+
+MAX_TRIES = 5
+
+"""
+Code from https://github.com/MIDORIBIN/langchain-gpt4free
+"""
 
 
-class G4F(LLM):
+class G4FLLM(LLM):
+    model: Union[Model, str]
+    provider: Optional[type[BaseProvider]] = None
+    auth: Optional[Union[str, bool]] = None
+    create_kwargs: Optional[dict[str, Any]] = None
+
     @property
     def _llm_type(self) -> str:
-        return 'custom'
+        return "custom"
 
     def _call(
             self,
@@ -17,14 +32,58 @@ class G4F(LLM):
             run_manager: Optional[CallbackManagerForLLMRun] = None,
             **kwargs: Any,
     ) -> str:
-        response = g4f.ChatCompletion.create(
-            model=g4f.models.gpt_35_turbo_0613,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        if stop:
-            stop_indices = (response.find(s) for s in stop if s in response)
-            min_stop = min(stop_indices, default=-1)
-            if min_stop > -1:
-                response = response[:min_stop]
+        create_kwargs = {} if self.create_kwargs is None else self.create_kwargs.copy()
+        create_kwargs["model"] = self.model
+        if self.provider is not None:
+            create_kwargs["provider"] = self.provider
+        if self.auth is not None:
+            create_kwargs["auth"] = self.auth
 
-        return response
+        for i in range(MAX_TRIES):
+            try:
+                text = ChatCompletion.create(
+                    messages=[{"role": "user", "content": prompt}],
+                    **create_kwargs,
+                )
+
+                # Generator -> str
+                text = text if type(text) is str else "".join(text)
+                if stop is not None:
+                    text = enforce_stop_tokens(text, stop)
+                if text:
+                    return text
+                print(f"Empty response, trying {i + 1} of {MAX_TRIES}")
+            except Exception as e:
+                print(f"Error in G4FLLM._call: {e}, trying {i + 1} of {MAX_TRIES}")
+        return ""
+
+    async def _acall(self, prompt: str, stop: Optional[List[str]] = None,
+                     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None, **kwargs: Any) -> str:
+        create_kwargs = {} if self.create_kwargs is None else self.create_kwargs.copy()
+        create_kwargs["model"] = self.model
+        if self.provider is not None:
+            create_kwargs["provider"] = self.provider
+        if self.auth is not None:
+            create_kwargs["auth"] = self.auth
+
+        text_callback = None
+        if run_manager:
+            text_callback = partial(run_manager.on_llm_new_token)
+
+        text = ""
+        for token in ChatCompletion.create(messages=[{"role": "user", "content": prompt}], stream=True,
+                                           **create_kwargs):
+            if text_callback:
+                await text_callback(token)
+            text += token
+        return text
+
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
+        """Get the identifying parameters."""
+        return {
+            "model": self.model,
+            "provider": self.provider,
+            "auth": self.auth,
+            "create_kwargs": self.create_kwargs,
+        }
